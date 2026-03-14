@@ -106,8 +106,6 @@ function toDecimalString(value, maxPlaces = 6) {
 
 function buildQuestion(type, decimalPlaces) {
   const denominator = ALLOWED_DENOMINATORS[randomInt(0, ALLOWED_DENOMINATORS.length - 1)];
-  const targetDenominator = denominatorToPowerOf10(denominator);
-  const multiplier = multiplierToPower10(denominator);
   let numerator;
   let whole = 0;
   let display = "";
@@ -141,9 +139,11 @@ function buildQuestion(type, decimalPlaces) {
     properNumerator = randomInt(1, denominator - 1);
     improperNumerator = whole * denominator + properNumerator;
     const simple = simplifyFraction(improperNumerator, denominator);
+
     if (simple.n <= simple.d) {
       return buildQuestion(type, decimalPlaces);
     }
+
     const finalWhole = Math.floor(simple.n / simple.d);
     const remainder = simple.n % simple.d;
     const remSimple = simplifyFraction(remainder, simple.d);
@@ -151,6 +151,7 @@ function buildQuestion(type, decimalPlaces) {
     const finalMultiplier = finalTarget / remSimple.d;
     const decimal = simple.n / simple.d;
     display = renderFraction(simple.n, simple.d);
+
     return {
       kind: "improper",
       numerator: simple.n,
@@ -218,6 +219,7 @@ function renderQuestion() {
   els.scoreText.textContent = String(state.score);
   els.quizContent.innerHTML = "";
   els.nextBtn.classList.add("hidden");
+  els.finishBtn.classList.add("hidden");
   els.submitBtn.classList.remove("hidden");
 
   const box = document.createElement("div");
@@ -240,9 +242,13 @@ function renderGuidedQuestionHTML(q) {
   if (q.kind === "proper") {
     return `
       <div class="expression">
-        ${q.display} = ${renderInputFraction("step1")} = <input type="text" class="decimal-input" id="finalDecimal" />
+        ${q.display}
+        =
+        ${renderInputFraction("step1")}
+        =
+        <input type="text" class="decimal-input" id="finalDecimal" />
       </div>
-      <p class="muted">請先把分母化成 10 100 1000，再寫成小數。</p>
+      <p class="muted">請先把分母化成 10、100、1000，再寫成小數。</p>
       <div id="feedback"></div>
     `;
   }
@@ -250,18 +256,31 @@ function renderGuidedQuestionHTML(q) {
   if (q.kind === "improper") {
     return `
       <div class="expression">
-        ${q.display} = <input type="text" class="small-input" id="wholePart" />${renderInputFraction("step1")} = <input type="text" class="decimal-input" id="finalDecimal" />
+        ${q.display}
+        =
+        <input type="text" class="small-input" id="wholePart" />
+        ${renderInputFraction("stepMixed")}
+        =
+        <input type="text" class="small-input" id="wholePart2" />
+        ${renderInputFraction("step1")}
+        =
+        <input type="text" class="decimal-input" id="finalDecimal" />
       </div>
-      <p class="muted">請先化成帶分數，再把分母化成 10 100 1000，最後寫成小數。</p>
+      <p class="muted">請先化成帶分數，再把分母化成 10、100、1000，最後寫成小數。</p>
       <div id="feedback"></div>
     `;
   }
 
   return `
     <div class="expression">
-      ${q.display} = <input type="text" class="small-input" id="wholePart" />${renderInputFraction("step1")} = <input type="text" class="decimal-input" id="finalDecimal" />
+      ${q.display}
+      =
+      <input type="text" class="small-input" id="wholePart" />
+      ${renderInputFraction("step1")}
+      =
+      <input type="text" class="decimal-input" id="finalDecimal" />
     </div>
-    <p class="muted">請把分數部分的分母化成 10 100 1000，最後寫成小數。</p>
+    <p class="muted">請把分數部分的分母化成 10、100、1000，最後寫成小數。</p>
     <div id="feedback"></div>
   `;
 }
@@ -293,6 +312,7 @@ function evaluateCurrentQuestion(autoSubmit = false) {
   }
 
   clearPerQuestionTimer();
+
   const q = state.questions[state.currentIndex];
   const feedback = document.getElementById("feedback");
   let correct = false;
@@ -308,12 +328,45 @@ function evaluateCurrentQuestion(autoSubmit = false) {
       const decimalOK = isSameDecimal(decimalInput, q.answerText);
       correct = stepOK && decimalOK;
       userRecord = { stepNum: num, stepDen: den, decimal: decimalInput };
+    } else if (q.kind === "improper") {
+      const whole1 = document.getElementById("wholePart")?.value ?? "";
+      const mixedNum = document.getElementById("stepMixed_num")?.value ?? "";
+      const mixedDen = document.getElementById("stepMixed_den")?.value ?? "";
+
+      const whole2 = document.getElementById("wholePart2")?.value ?? "";
+      const num = document.getElementById("step1_num")?.value ?? "";
+      const den = document.getElementById("step1_den")?.value ?? "";
+
+      const mixedOK =
+        Number(whole1) === q.mixedWhole &&
+        Number(mixedNum) === q.mixedNumerator &&
+        Number(mixedDen) === q.mixedDenominator;
+
+      const stepOK =
+        Number(whole2) === q.mixedWhole &&
+        Number(num) === q.convertedNumerator &&
+        Number(den) === q.targetDenominator;
+
+      const decimalOK = isSameDecimal(decimalInput, q.answerText);
+
+      correct = mixedOK && stepOK && decimalOK;
+      userRecord = {
+        whole1,
+        mixedNum,
+        mixedDen,
+        whole2,
+        stepNum: num,
+        stepDen: den,
+        decimal: decimalInput,
+      };
     } else {
       const whole = document.getElementById("wholePart")?.value ?? "";
       const num = document.getElementById("step1_num")?.value ?? "";
       const den = document.getElementById("step1_den")?.value ?? "";
-      const expectedWhole = q.kind === "improper" ? q.mixedWhole : q.whole;
-      const stepOK = Number(whole) === expectedWhole && Number(num) === q.convertedNumerator && Number(den) === q.targetDenominator;
+      const stepOK =
+        Number(whole) === q.whole &&
+        Number(num) === q.convertedNumerator &&
+        Number(den) === q.targetDenominator;
       const decimalOK = isSameDecimal(decimalInput, q.answerText);
       correct = stepOK && decimalOK;
       userRecord = { whole, stepNum: num, stepDen: den, decimal: decimalInput };
@@ -358,9 +411,11 @@ function buildCorrectAnswerText(q) {
   if (q.kind === "proper") {
     return `${q.display} = ${renderFraction(q.convertedNumerator, q.targetDenominator)} = ${q.answerText}`;
   }
+
   if (q.kind === "improper") {
-    return `${q.display} = ${q.mixedWhole}${renderFraction(q.convertedNumerator, q.targetDenominator)} = ${q.answerText}`;
+    return `${q.display} = ${q.mixedWhole}${renderFraction(q.mixedNumerator, q.mixedDenominator)} = ${q.mixedWhole}${renderFraction(q.convertedNumerator, q.targetDenominator)} = ${q.answerText}`;
   }
+
   return `${q.display} = ${q.whole}${renderFraction(q.convertedNumerator, q.targetDenominator)} = ${q.answerText}`;
 }
 
@@ -511,17 +566,6 @@ function clearAllTimers() {
   }
 }
 
-els.startBtn.addEventListener("click", startQuiz);
-els.submitBtn.addEventListener("click", () => evaluateCurrentQuestion(false));
-els.nextBtn.addEventListener("click", goNextQuestion);
-els.finishBtn.addEventListener("click", finishQuiz);
-els.restartBtn.addEventListener("click", resetState);
-document.querySelectorAll('input[name="mode"]').forEach((el) => el.addEventListener("change", updateModeUI));
-
-updateModeUI();
-resetState();
-
-
 function renderAllAtOnceQuestions() {
   els.progressText.textContent = `全部 ${state.questions.length} 題`;
   els.scoreText.textContent = String(state.score);
@@ -542,27 +586,41 @@ function renderAllAtOnceQuestions() {
   });
 }
 
-
 function evaluateAllAtOnceQuestions(autoSubmit = false) {
   clearAllTimers();
   state.score = 0;
   state.userAnswers = [];
+
   state.questions.forEach((q, index) => {
     const input = document.querySelector(`.all-at-once-input[data-index="${index}"]`);
     const decimalInput = input?.value ?? "";
     const correct = isSameDecimal(decimalInput, q.answerText);
+
     if (correct) state.score += 1;
+
     state.userAnswers[index] = {
       question: q,
       user: { decimal: decimalInput },
       correct,
       timedOut: autoSubmit,
     };
+
     const feedback = document.getElementById(`feedback_${index}`);
     feedback.className = `feedback ${correct ? "ok" : "bad"}`;
     feedback.innerHTML = correct ? "答對了！" : `答錯了。正確答案：${q.answerText}`;
   });
+
   els.scoreText.textContent = String(state.score);
   els.submitBtn.classList.add("hidden");
   els.finishBtn.classList.remove("hidden");
 }
+
+els.startBtn.addEventListener("click", startQuiz);
+els.submitBtn.addEventListener("click", () => evaluateCurrentQuestion(false));
+els.nextBtn.addEventListener("click", goNextQuestion);
+els.finishBtn.addEventListener("click", finishQuiz);
+els.restartBtn.addEventListener("click", resetState);
+document.querySelectorAll('input[name="mode"]').forEach((el) => el.addEventListener("change", updateModeUI));
+
+updateModeUI();
+resetState();
