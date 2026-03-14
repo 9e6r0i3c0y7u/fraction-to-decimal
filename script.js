@@ -242,7 +242,7 @@ function renderGuidedQuestionHTML(q) {
       <div class="expression">
         ${q.display} = ${renderInputFraction("step1")} = <input type="text" class="decimal-input" id="finalDecimal" />
       </div>
-      <p class="muted">請先把分母化成 10 的整數次方，再寫成小數。</p>
+      <p class="muted">請先把分母化成 10 100 1000，再寫成小數。</p>
       <div id="feedback"></div>
     `;
   }
