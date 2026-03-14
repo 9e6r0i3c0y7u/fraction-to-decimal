@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>分數轉小數練習器</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>分數轉小數練習器</h1>
+      <p>可直接放到 GitHub Pages 的純前端網頁</p>
+    </header>
+
+    <section class="card settings">
+      <h2>出題設定</h2>
+
+      <div class="grid two">
+        <label>
+          題數
+          <input type="number" id="questionCount" min="1" max="100" value="10" />
+        </label>
+
+        <label>
+          小數位數上限（顯示用）
+          <input type="number" id="decimalPlaces" min="1" max="6" value="3" />
+        </label>
+      </div>
+
+      <div class="block">
+        <h3>題型（可複選）</h3>
+        <div class="checkbox-row">
+          <label><input type="checkbox" class="fraction-type" value="proper" checked /> 真分數</label>
+          <label><input type="checkbox" class="fraction-type" value="improper" checked /> 假分數</label>
+          <label><input type="checkbox" class="fraction-type" value="mixed" checked /> 帶分數</label>
+        </div>
+      </div>
+
+      <div class="block">
+        <h3>模式</h3>
+        <div class="radio-col">
+          <label><input type="radio" name="mode" value="guided" checked /> 1. 引導模式（分步填空）</label>
+          <label><input type="radio" name="mode" value="direct" /> 2. 直接轉小數</label>
+          <label><input type="radio" name="mode" value="timed" /> 3. 限時模式（以直接轉小數為基礎）</label>
+        </div>
+      </div>
+
+      <div class="block hidden" id="timedOptions">
+        <h3>限時模式設定</h3>
+        <div class="radio-col">
+          <label><input type="radio" name="timedType" value="perQuestion" checked /> 一題一題出題（每題時間）</label>
+          <label><input type="radio" name="timedType" value="allAtOnce" /> 一次出完全部（總時間）</label>
+        </div>
+
+        <div class="grid two">
+          <label>
+            每題時間（秒）
+            <input type="number" id="perQuestionSeconds" min="5" max="600" value="20" />
+          </label>
+          <label>
+            總時間（秒）
+            <input type="number" id="totalSeconds" min="10" max="3600" value="120" />
+          </label>
+        </div>
+      </div>
+
+      <div class="block">
+        <h3>分母規則</h3>
+        <p>只會產生由 2 與 5 的倍數因子組成的分母，也就是 <code>2^a × 5^b</code> 形式。</p>
+      </div>
+
+      <button id="startBtn" class="primary">開始練習</button>
+    </section>
+
+    <section class="card hidden" id="quizPanel">
+      <div class="quiz-topbar">
+        <div>
+          <strong>進度：</strong>
+          <span id="progressText">0 / 0</span>
+        </div>
+        <div>
+          <strong>分數：</strong>
+          <span id="scoreText">0</span>
+        </div>
+        <div id="timerBox" class="hidden">
+          <strong>剩餘時間：</strong>
+          <span id="timerText">--</span>
+        </div>
+      </div>
+
+      <div id="quizContent"></div>
+
+      <div class="actions">
+        <button id="submitBtn" class="primary">送出答案</button>
+        <button id="nextBtn" class="secondary hidden">下一題</button>
+        <button id="finishBtn" class="danger hidden">結束本次練習</button>
+      </div>
+    </section>
+
+    <section class="card hidden" id="resultPanel">
+      <h2>作答結果</h2>
+      <p id="resultSummary"></p>
+      <div id="reviewList"></div>
+      <button id="restartBtn" class="primary">再做一次</button>
+    </section>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
