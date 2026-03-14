@@ -237,15 +237,23 @@ function renderQuestion() {
 }
 
 function renderGuidedQuestionHTML(q) {
-  if (q.kind === "proper") {
-    return `
-      <div class="expression">
-        ${q.display} = ${renderInputFraction("step1")} = <input type="text" class="decimal-input" id="finalDecimal" />
-      </div>
-      <p class="muted">請先把分母化成 10 100 1000，再寫成小數。</p>
-      <div id="feedback"></div>
-    `;
-  }
+if (q.kind === "improper") {
+  return `
+    <div class="expression">
+      ${q.display}
+      =
+      <input type="text" class="small-input" id="wholePart" />
+      ${renderInputFraction("stepMixed")}
+      =
+      <input type="text" class="small-input" id="wholePart2" />
+      ${renderInputFraction("step1")}
+      =
+      <input type="text" class="decimal-input" id="finalDecimal" />
+    </div>
+    <p class="muted">請先化成帶分數，再把分母化成 10、100、1000，最後寫成小數。</p>
+    <div id="feedback"></div>
+  `;
+}
 
   if (q.kind === "improper") {
     return `
@@ -300,28 +308,61 @@ function evaluateCurrentQuestion(autoSubmit = false) {
 
   const decimalInput = document.getElementById("finalDecimal")?.value ?? "";
 
-  if (state.settings.mode === "guided") {
-    if (q.kind === "proper") {
-      const num = document.getElementById("step1_num")?.value ?? "";
-      const den = document.getElementById("step1_den")?.value ?? "";
-      const stepOK = Number(num) === q.convertedNumerator && Number(den) === q.targetDenominator;
-      const decimalOK = isSameDecimal(decimalInput, q.answerText);
-      correct = stepOK && decimalOK;
-      userRecord = { stepNum: num, stepDen: den, decimal: decimalInput };
-    } else {
-      const whole = document.getElementById("wholePart")?.value ?? "";
-      const num = document.getElementById("step1_num")?.value ?? "";
-      const den = document.getElementById("step1_den")?.value ?? "";
-      const expectedWhole = q.kind === "improper" ? q.mixedWhole : q.whole;
-      const stepOK = Number(whole) === expectedWhole && Number(num) === q.convertedNumerator && Number(den) === q.targetDenominator;
-      const decimalOK = isSameDecimal(decimalInput, q.answerText);
-      correct = stepOK && decimalOK;
-      userRecord = { whole, stepNum: num, stepDen: den, decimal: decimalInput };
-    }
+if (state.settings.mode === "guided") {
+  if (q.kind === "proper") {
+    const num = document.getElementById("step1_num")?.value ?? "";
+    const den = document.getElementById("step1_den")?.value ?? "";
+    const stepOK = Number(num) === q.convertedNumerator && Number(den) === q.targetDenominator;
+    const decimalOK = isSameDecimal(decimalInput, q.answerText);
+    correct = stepOK && decimalOK;
+    userRecord = { stepNum: num, stepDen: den, decimal: decimalInput };
+  } else if (q.kind === "improper") {
+    const whole1 = document.getElementById("wholePart")?.value ?? "";
+    const mixedNum = document.getElementById("stepMixed_num")?.value ?? "";
+    const mixedDen = document.getElementById("stepMixed_den")?.value ?? "";
+
+    const whole2 = document.getElementById("wholePart2")?.value ?? "";
+    const num = document.getElementById("step1_num")?.value ?? "";
+    const den = document.getElementById("step1_den")?.value ?? "";
+
+    const mixedOK =
+      Number(whole1) === q.mixedWhole &&
+      Number(mixedNum) === q.mixedNumerator &&
+      Number(mixedDen) === q.mixedDenominator;
+
+    const stepOK =
+      Number(whole2) === q.mixedWhole &&
+      Number(num) === q.convertedNumerator &&
+      Number(den) === q.targetDenominator;
+
+    const decimalOK = isSameDecimal(decimalInput, q.answerText);
+
+    correct = mixedOK && stepOK && decimalOK;
+    userRecord = {
+      whole1,
+      mixedNum,
+      mixedDen,
+      whole2,
+      stepNum: num,
+      stepDen: den,
+      decimal: decimalInput,
+    };
   } else {
-    correct = isSameDecimal(decimalInput, q.answerText);
-    userRecord = { decimal: decimalInput };
+    const whole = document.getElementById("wholePart")?.value ?? "";
+    const num = document.getElementById("step1_num")?.value ?? "";
+    const den = document.getElementById("step1_den")?.value ?? "";
+    const stepOK =
+      Number(whole) === q.whole &&
+      Number(num) === q.convertedNumerator &&
+      Number(den) === q.targetDenominator;
+    const decimalOK = isSameDecimal(decimalInput, q.answerText);
+    correct = stepOK && decimalOK;
+    userRecord = { whole, stepNum: num, stepDen: den, decimal: decimalInput };
   }
+} else {
+  correct = isSameDecimal(decimalInput, q.answerText);
+  userRecord = { decimal: decimalInput };
+}
 
   if (autoSubmit && !decimalInput && state.settings.mode !== "guided") {
     correct = false;
