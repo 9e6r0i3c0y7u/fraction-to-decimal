@@ -252,7 +252,7 @@ function renderGuidedQuestionHTML(q) {
       <div class="expression">
         ${q.display} = <input type="text" class="small-input" id="wholePart" />${renderInputFraction("step1")} = <input type="text" class="decimal-input" id="finalDecimal" />
       </div>
-      <p class="muted">請先化成帶分數，再把分母化成 10 的整數次方，最後寫成小數。</p>
+      <p class="muted">請先化成帶分數，再把分母化成 10 100 1000，最後寫成小數。</p>
       <div id="feedback"></div>
     `;
   }
@@ -261,7 +261,7 @@ function renderGuidedQuestionHTML(q) {
     <div class="expression">
       ${q.display} = <input type="text" class="small-input" id="wholePart" />${renderInputFraction("step1")} = <input type="text" class="decimal-input" id="finalDecimal" />
     </div>
-    <p class="muted">請把分數部分的分母化成 10 的整數次方，最後寫成小數。</p>
+    <p class="muted">請把分數部分的分母化成 10 100 1000，最後寫成小數。</p>
     <div id="feedback"></div>
   `;
 }
